@@ -2,35 +2,35 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Car Rental QR Scanner</title>
   <style>
     body, html {
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-}
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
 
-#scanner-container {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-}
+    #scanner-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
 
-#video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
+    #video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
 
-#three-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
+    #three-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -43,90 +43,88 @@
   <script src="https://threejs.org/build/three.min.js"></script>
   <!-- QR Code Scanning Library -->
   <script src="https://unpkg.com/jsqr/dist/jsQR.js"></script>
-  <!-- JavaScript code will be added here -->
-  
-// Access the user's camera
-const video = document.getElementById('video');
-navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-  .then(stream => {
-    video.srcObject = stream;
-    video.setAttribute("playsinline", true); // Required to tell iOS safari we don't want fullscreen
-    requestAnimationFrame(tick);
-  });
+  <script>
+    // Access the user's camera
+    const video = document.getElementById('video');
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      .then(stream => {
+        video.srcObject = stream;
+        video.setAttribute("playsinline", true); // Required to avoid fullscreen on iOS
+        requestAnimationFrame(tick);
+      });
 
-// Set up canvas for QR code scanning
-const canvasElement = document.createElement('canvas');
-const canvas = canvasElement.getContext('2d');
+    // Set up canvas for QR code scanning
+    const canvasElement = document.createElement('canvas');
+    const canvas = canvasElement.getContext('2d');
 
-// Three.js Setup
-let scene, camera, renderer, mixer, clock, carModel;
+    // Three.js Setup
+    let scene, camera, renderer, clock, carModel;
 
-initThreeJS();
+    initThreeJS();
 
-function initThreeJS() {
-  const threeCanvas = document.getElementById('three-canvas');
-  renderer = new THREE.WebGLRenderer({ canvas: threeCanvas, alpha: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(window.devicePixelRatio);
+    function initThreeJS() {
+      const threeCanvas = document.getElementById('three-canvas');
+      renderer = new THREE.WebGLRenderer({ canvas: threeCanvas, alpha: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
 
-  scene = new THREE.Scene();
+      scene = new THREE.Scene();
 
-  camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 10);
-  camera.position.z = 1;
+      camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 10);
+      camera.position.z = 1;
 
-  // Add ambient light
-  const light = new THREE.AmbientLight(0xffffff, 1);
-  scene.add(light);
+      // Add ambient light
+      const light = new THREE.AmbientLight(0xffffff, 1);
+      scene.add(light);
 
-  // Load a simple 3D car model or geometry
-  const geometry = new THREE.BoxGeometry(0.2, 0.1, 0.05);
-  const material = new THREE.MeshStandardMaterial({ color: 0x007bff });
-  carModel = new THREE.Mesh(geometry, material);
-  carModel.visible = false; // Hide the model initially
-  scene.add(carModel);
+      // Create a simple 3D car model or geometry
+      const geometry = new THREE.BoxGeometry(0.2, 0.1, 0.05);
+      const material = new THREE.MeshStandardMaterial({ color: 0x007bff });
+      carModel = new THREE.Mesh(geometry, material);
+      carModel.visible = false; // Hide the model initially
+      scene.add(carModel);
 
-  clock = new THREE.Clock();
+      clock = new THREE.Clock();
 
-  animateThreeJS();
-}
-
-function animateThreeJS() {
-  requestAnimationFrame(animateThreeJS);
-
-  if (carModel.visible) {
-    carModel.rotation.y += 0.01; // Rotate the model when visible
-  }
-
-  renderer.render(scene, camera);
-}
-
-function tick() {
-  if (video.readyState === video.HAVE_ENOUGH_DATA) {
-    canvasElement.height = video.videoHeight;
-    canvasElement.width = video.videoWidth;
-    canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
-    const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
-    const code = jsQR(imageData.data, imageData.width, imageData.height, {
-      inversionAttempts: "dontInvert",
-    });
-    if (code) {
-      // QR code detected
-      handleQRCodeScanned(code.data);
+      animateThreeJS();
     }
-  }
-  requestAnimationFrame(tick);
-}
 
-function handleQRCodeScanned(data) {
-  // Stop the video stream
-  video.srcObject.getTracks().forEach(track => track.stop());
-  // Show the 3D car model
-  carModel.visible = true;
+    function animateThreeJS() {
+      requestAnimationFrame(animateThreeJS);
 
-  // Optionally, display the scanned data
-  console.log('QR Code Data:', data);
-}
+      if (carModel.visible) {
+        carModel.rotation.y += 0.01; // Rotate the model when visible
+      }
 
-  
+      renderer.render(scene, camera);
+    }
+
+    function tick() {
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvasElement.height = video.videoHeight;
+        canvasElement.width = video.videoWidth;
+        canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+        const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: "dontInvert",
+        });
+        if (code) {
+          // QR code detected
+          handleQRCodeScanned(code.data);
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+
+    function handleQRCodeScanned(data) {
+      // Stop the video stream
+      video.srcObject.getTracks().forEach(track => track.stop());
+      // Show the 3D car model
+      carModel.visible = true;
+
+      // Optionally, display the scanned data
+      console.log('QR Code Data:', data);
+    }
+  </script>
 </body>
 </html>
